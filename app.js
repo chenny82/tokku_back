@@ -3,9 +3,11 @@ const app = express();
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const cors = require('cors');
+const session  = require("express-session");
 const bodyParser = require("body-parser");
+const passport = require("passport");
 const cookieParser = require("cookie-parser");
-const nodemailer = require("nodemailer");
+
 
 require("dotenv/config");
 
@@ -19,7 +21,14 @@ app.use(express.json());
 app.use(morgan('tiny'));
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
-
+app.use(session({
+	secret: 'keyboard cat',
+	resave: false,
+	saveUninitialized: true,
+    cookie:{maxAge:4 * 60 * 60 * 1000} //쿠키 4시간 동안 유지
+}));
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 //Routes
 const usersRoutes = require("./routes/usersR");

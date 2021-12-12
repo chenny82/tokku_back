@@ -5,9 +5,8 @@ const { json } = require('express/lib/response');
 const router = express.Router();
 const bycrypt = require("bcryptjs");
 const cookieParser=require('cookie-parser');
-const { restart } = require('nodemon');
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
+
 
 //회원 가입 
 router.post('/',async(req,res)=>{
@@ -40,7 +39,7 @@ router.post('/',async(req,res)=>{
         });
 
         var mailOption={
-            from:"tokku.back.test@gmail.com",
+            from:process.env.send_email,
             to:user.email,
             subject:"이메일 인증 테스트",
             text:" 이메일 인증 테스트 메일입니다."
@@ -68,7 +67,7 @@ router.post('/',async(req,res)=>{
 })
 
 //로그인 - id, password 일치하는지만 확인  로그인ok
-router.post('/login/:userId', async (req,res)=>{
+router.post('/login', async (req,res)=>{
     let user = await users.findOne({userId:req.body.userId});
 
     if(!user){
@@ -84,14 +83,34 @@ router.post('/login/:userId', async (req,res)=>{
               loginSuccess:false,	
               message:"비밀번호가 틀렸습니다."	
             })
-        user.generateToken((err,user) => {	
-            if(err) return res.status(400).send(err);	
-                // 토큰을 저장한다. 어디에? 쿠키, 로컬스토리지	
-            else return res.cookie("x_auth", user.token)	
-            .status(200)	
-            .json({loginSuccess: true, userId: user.userId})	
-            })		
+        req.session.is_logined = true;
+        req.session.userId = user.userId;
+        req.session.nickname=user.nickname;
+        console.log("[로그인 성공]",user.nickname);
+        req.session.save((err)=>{
+            if(err) console.log("세션 저장 실패");
+            return res.json({
+                loginSuccess: true,
+                message:"[로그인 성공]",
+            })
+        })
       })
+})
+
+//로그아웃
+router.get('/logout',async(req,res)=>{
+    if(req.session.is_logined){
+        req.session.is_logined=false;
+        req.session.destroy((err)=>{
+            if(err) console.log("로그아웃 실패");
+            return res.json({
+                loginSuccess: true,
+                message:"[로그아웃 성공]",
+            })
+        })
+    }else{
+        res.status(500).send("먼저 로그인 해주세요");
+    }
 })
 
 //아이디 찾기 -> 이메일로 아이디 보내주기
@@ -113,7 +132,7 @@ router.post('/find-id',async(req,res)=>{
     });
 
     var mailOption={
-        from:"tokku.back.test@gmail.com",
+        from:process.env.send_email,
         to:user.email,
         subject:"[TOKKU] 아이디를 보내드립니다.",
         text:`회원님의 아이디는 ${user.userId} 입니다`,
@@ -148,7 +167,7 @@ router.put('/find-pw/:userId',async(req,res)=>{
     });
 
     var mailOption={
-        from:"tokku.back.test@gmail.com",
+        from:process.env.send_email,
         to:user.email,
         subject:"[TOKKU] 임시 비밀번호를 보내드립니다.",
         text:`회원님의 임시 비밀번호는 ${random} 입니다`,
@@ -189,15 +208,12 @@ router.put('/find-pw/:userId',async(req,res)=>{
 router.delete('/delete/:userId',async(req,res)=>{
     users.findOneAndRemove(req.params.userId).then(user=>{
         if(user){
-            return res.status(200).json({success: true, message:"deleted"});
+            return res.status(200).json({message:"deleted"});
         }else{
-            return res.status(404).json({
-                success:false,
-                message:"error occured"
-            });
+            return res.status(500).json({message:"error occured"});
         }
     }).catch(err=>{
-        return res.status(400).json({success:false,error:err})
+        return res.status(500).json({message:"Failed"})
     })
 })
 
