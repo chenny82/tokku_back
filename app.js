@@ -8,7 +8,6 @@ const bodyParser = require("body-parser");
 const passport = require("passport");
 const cookieParser = require("cookie-parser");
 
-
 require("dotenv/config");
 
 const api = process.env.API_URL;
@@ -33,6 +32,9 @@ app.use(cookieParser());
 //Routes
 const usersRoutes = require("./routes/usersR");
 app.use(`${api}/users`,usersRoutes);
+const googleRoutes = require("./routes/googleR");
+app.use(`/auth`, googleRoutes);
+
 
 mongoose.connect(process.env.DB_STRING,{
     useNewUrlParser:true,
