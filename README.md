@@ -23,3 +23,10 @@
 2. 로그인 -> 기존 사용자일 경우 로그인 / 최초 이용 시 DB에 이메일, 이름, provider, token, providerId 저장 후 로그인
 3. 콜백 -> 로그인 후 성공 실패 모두 /auth로 돌아오도록 설정
 4. 로그아웃 
+
+2022-01-27
+
+tabSchema 생성
+1. id는 mongoose의 ObjectId로 설정
+2. tab 이름은 String형태 unique
+3. 컨텐츠는 [mongoose.Schema.Types.Mixed]로 형식 지정 없이 배열로
